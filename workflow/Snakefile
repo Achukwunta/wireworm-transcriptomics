@@ -1,0 +1,218 @@
+# workflow/Snakefile
+
+configfile: "config/config.yml"
+
+# Define samples and directories from config
+SAMPLES = config["samples"]
+PARAMS = config["params"]
+
+# Target rule - defines what will be built when you run just 'snakemake'
+rule all:
+    input:
+        "results/final_assembly/Habb_transcriptome.fasta",
+        "results/annotation/eggnog_results/Habb_annot.emapper.annotations",
+        expand("results/quants/{sample}/quant.sf", sample=SAMPLES)
+
+# --- Quality Control & Trimming ---
+rule fastqc_raw:
+    input:
+        "data/raw/Habb_WWA_6_R1.fastq.gz",
+        "data/raw/Habb_WWA_6_R2.fastq.gz", 
+        "data/raw/Habb_WWA_7_R1.fastq.gz",
+        "data/raw/Habb_WWA_7_R2.fastq.gz",
+        "data/raw/Habb_WWA_8_R1.fastq.gz",
+        "data/raw/Habb_WWA_8_R2.fastq.gz"
+    output:
+        directory("data/raw/fastq_report")
+    log:
+        "logs/fastqc_raw.log"
+    shell:
+        """
+        echo "=== Running FastQC on all files ===" > {log}
+        echo "Input files: {input}" >> {log}
+        mkdir -p data/raw/fastq_report
+        fastqc {input} -o data/raw/fastq_report >> {log} 2>&1
+        echo "=== Checking output directory ===" >> {log}
+        ls -la data/raw/fastq_report/ >> {log} 2>&1
+        echo "FastQC completed with exit code: $?" >> {log}
+        """
+		
+rule multiqc_raw:
+    input:
+        "data/raw/fastq_report"
+    output:
+        "data/raw/multiqc_report/multiqc_report.html"
+    log:
+        "logs/multiqc_raw.log"
+    shell:
+        "multiqc {input} -o data/raw/multiqc_report > {log} 2>&1"
+
+rule run_fastp:
+    input:
+        r1 = "data/raw/{sample}_R1.fastq.gz",
+        r2 = "data/raw/{sample}_R2.fastq.gz"
+    output:
+        trim_r1 = "results/trimmed_reads/{sample}_R1.fastq.gz",
+        trim_r2 = "results/trimmed_reads/{sample}_R2.fastq.gz",
+        report_html = "results/trimmed_reads/{sample}.html",
+        report_json = "results/trimmed_reads/{sample}.json"
+    params:
+        fastp_params = "--detect_adapter_for_pe --low_complexity_filter --length_required {length} --qualified_quality_phred {qual} --n_base_limit {n_limit} --thread {threads}".format(
+            length=PARAMS["fastp"]["length_required"],
+            qual=PARAMS["fastp"]["qualified_quality_phred"],
+            n_limit=PARAMS["fastp"]["n_base_limit"],
+            threads=PARAMS["fastp"]["threads"]
+        )
+    log:
+        "logs/fastp/{sample}.log"
+    shell:
+        """
+        fastp --in1 {input.r1} --in2 {input.r2} \
+              --out1 {output.trim_r1} --out2 {output.trim_r2} \
+              {params.fastp_params} \
+              --html {output.report_html} --json {output.report_json} > {log} 2>&1
+        """
+
+rule remove_duplicates:
+    input:
+        r1 = "results/trimmed_reads/{sample}_R1.fastq.gz",
+        r2 = "results/trimmed_reads/{sample}_R2.fastq.gz"
+    output:
+        unique_r1 = "results/unique/{sample}_R1.fastq.gz",
+        unique_r2 = "results/unique/{sample}_R2.fastq.gz"
+    log:
+        "logs/seqkit/{sample}.log"
+    shell:
+        """
+        seqkit rmdup -s -o {output.unique_r1} {input.r1} >> {log} 2>&1
+        seqkit rmdup -s -o {output.unique_r2} {input.r2} >> {log} 2>&1
+        """
+
+# --- De Novo Assembly ---
+rule trinity_assembly:
+    input:
+        expand("results/unique/{sample}_{{read}}.fastq.gz", sample=SAMPLES, read=["R1", "R2"])
+    output:
+        directory("results/trinity_assembly")
+    params:
+        left = ",".join(["results/unique/{sample}_R1.fastq.gz".format(sample=s) for s in SAMPLES]),
+        right = ",".join(["results/unique/{sample}_R2.fastq.gz".format(sample=s) for s in SAMPLES]),
+        trinity_params = "--seqType {seqType} --max_memory {max_memory} --CPU {CPU}".format(
+            seqType=PARAMS["trinity"]["seqType"],
+            max_memory=PARAMS["trinity"]["max_memory"],
+            CPU=PARAMS["trinity"]["CPU"]
+        )
+    log:
+        "logs/trinity.log"
+    threads: PARAMS["trinity"]["CPU"]
+    shell:
+        """
+        Trinity --left {params.left} --right {params.right} \
+                {params.trinity_params} \
+                --output {output.assembly} > {log} 2>&1
+        """
+
+rule trinity_stats:
+    input:
+        "results/trinity_assembly/Trinity.fasta"
+    output:
+        "logs/stats_trinity.log"
+    shell:
+        "TrinityStats.pl {input} > {output}"
+
+# --- Transcript Filtering ---
+rule rename_transcripts:
+    input:
+        "results/trinity_assembly/Trinity.fasta"
+    output:
+        "results/Habb_renamed_contigs.fasta",
+        "results/id_map.txt"
+    shell:
+        """
+        grep "^>" {input} | awk '{{split($0,a," "); print a[1]}}' | sed 's/^>//' \
+        | awk '{{printf("Habb_%05d\\t%s\\n", NR, $1)}}' > {output[1]}
+        awk '
+          NR==FNR {{map[$2]=$1; next}}
+          /^>/ {{
+            split($0, a, " ");
+            sub(/^>/, "", a[1]);
+            if (a[1] in map) {{
+              a[1] = map[a[1]];
+              printf(">%s", a[1]);
+              for (i=2; i<=NF; i++) printf(" %s", a[i]);
+              print ""
+            }} else {{
+              print $0
+            }}
+            next
+          }}
+          {{print}}
+        ' {output[1]} {input} > {output[0]}
+        """
+
+rule cluster_transcripts:
+    input:
+        "results/Habb_renamed_contigs.fasta"
+    output:
+        "results/Habb_clustered_contigs.fasta"
+    params:
+        identity = PARAMS["cdhit"]["identity_threshold"],
+        word_size = PARAMS["cdhit"]["word_size"]
+    log:
+        "logs/cd-hit.log"
+    shell:
+        "cd-hit-est -i {input} -o {output} -c {params.identity} -n {params.word_size} > {log} 2>&1"
+
+rule length_filter:
+    input:
+        "results/Habb_clustered_contigs.fasta"
+    output:
+        "results/Habb_filtered_contigs.fasta"
+    params:
+        min_length = PARAMS["seqkit"]["min_length"]
+    shell:
+        "seqkit seq -m {params.min_length} {input} > {output}"
+
+# --- Create final transcriptome (placeholder for now) ---
+rule create_final_transcriptome:
+    input:
+        "results/Habb_filtered_contigs.fasta"
+    output:
+        "results/final_assembly/Habb_transcriptome.fasta"
+    shell:
+        "cp {input} {output}"
+
+# --- Functional Annotation (commented out until databases are available) ---
+"""
+rule transdecoder_longorfs:
+    input:
+        "results/final_assembly/Habb_transcriptome.fasta"
+    output:
+        directory("results/Transdecoder")
+    shell:
+        "TransDecoder.LongOrfs -t {input} --output_dir {output}"
+
+rule transdecoder_predict:
+    input:
+        fasta = "results/final_assembly/Habb_transcriptome.fasta",
+        transdecoder_dir = "results/Transdecoder"
+    output:
+        "results/Transdecoder/Habb_transcriptome.fasta.transdecoder.pep"
+    shell:
+        "TransDecoder.Predict -t {input.fasta} --output_dir results/Transdecoder"
+
+rule eggnog_annotation:
+    input:
+        "results/Transdecoder/Habb_transcriptome.fasta.transdecoder.pep"
+    output:
+        "results/annotation/eggnog_results/Habb_annot.emapper.annotations"
+    params:
+        data_dir = "resources/eggnog_data"
+    log:
+        "logs/eggnog.log"
+    threads: 16
+    shell:
+        "emapper.py -i {input} --itype proteins --cpu {threads} \
+            --data_dir {params.data_dir} --pfam_realign denovo \
+            --output_dir results/annotation/eggnog_results -o Habb_annot > {log} 2>&1"
+"""

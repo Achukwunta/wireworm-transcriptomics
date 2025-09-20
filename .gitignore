@@ -1,0 +1,114 @@
+# .gitignore for wireworm-transcriptomics project
+
+# Raw sequencing data (FASTQ files)
+data/raw/
+
+# Trimmed and processed reads
+results/trimmed_reads/
+results/unique/
+
+# External reference databases (download these with scripts)
+resources/blastdb/
+resources/busco_downloads/
+resources/eggnog_data/
+
+# Assembly intermediate files
+results/trinity_assembly/
+results/Habb_renamed_contigs.fasta
+results/Habb_clustered_contigs.fasta
+results/Habb_filtered_contigs.fasta
+results/Habb_significant_contigs.fasta
+results/Habb_high_transcripts.fasta
+results/Habb_cleaned_transcripts.fasta
+
+# Quantification files
+results/quants/
+results/salmon_final/
+
+# BLAST results
+results/blast_results/
+results/pairwise/
+
+# Annotation intermediate files
+results/Transdecoder/
+results/annotation/
+
+# Quality reports (can be regenerated)
+results/busco_out_*/
+results/quast_output/
+
+logs/
+*.log
+
+# Snakemake working directory
+.snakemake/
+
+# Conda environments
+.env/
+.conda/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+
+#  Temporary Files   
+*.tmp
+*.temp
+*.bam
+*.sam
+*.fai
+*.bt2
+*.ht2
+
+
+#  NCBI Submission Files 
+*.fsa
+*.fsa.gz
+discrepancy.report
+SubmissionTemplate.sbt
+contam.fasta
+id_map.txt
+significant_transcripts.txt
+
+
+#  Python-specific
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+#  Environment files
+environment.yml
+*.env

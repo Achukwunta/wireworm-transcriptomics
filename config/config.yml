@@ -1,0 +1,76 @@
+# config/config.yml
+# Configuration for Hypnoidus abbreviatus de novo transcriptome assembly pipeline
+
+samples:
+  - Habb_WWA_6
+  - Habb_WWA_7
+  - Habb_WWA_8
+
+# Reference Databases and Paths
+references:
+  nt_db: "resources/blastdb/nt"
+  busco_lineage: "resources/busco_downloads/lineages/insecta_odb10"
+  eggnog_data_dir: "resources/eggnog_data"
+
+# Parameters for key tools
+params:
+  fastp:
+    detect_adapter_for_pe: true
+    low_complexity_filter: true
+    length_required: 30
+    qualified_quality_phred: 20
+    n_base_limit: 5
+    threads: 8
+
+  # Trinity assembly parameters
+  trinity:
+    seqType: "fq"
+    max_memory: "120G"
+    CPU: 16
+
+  # CD-HIT-EST parameters for transcript clustering
+  cdhit:
+    identity_threshold: 0.90
+    word_size: 8
+
+  # Seqkit parameters for length filtering
+  seqkit:
+    min_length: 250
+
+  # Salmon parameters for expression quantification
+  salmon:
+    index_kmer: 25
+    libtype: "A"
+    validateMappings: true
+    threads: 8
+
+  # BLAST parameters for contamination screening
+  blast:
+    evalue: 1e-5
+    max_target_seqs: 5
+    outfmt: "6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore staxids sscinames"
+
+  # Comparative analysis species and their download URLs
+  comparative_species:
+    Photinus_pyralis: "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/008/802/855/GCF_008802855.1_Ppyr1.3/GCF_008802855.1_Ppyr1.3_rna.fna.gz"
+    Agrilus_planipennis: "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/699/045/GCF_000699045.2_Apla_2.0/GCF_000699045.2_Apla_2.0_rna.fna.gz"
+    Onthophagus_taurus: "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/036/711/975/GCF_036711975.1_IU_Otau_3.0/GCF_036711975.1_IU_Otau_3.0_rna.fna.gz"
+    Tribolium_castaneum: "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/031/307/605/GCF_031307605.1_icTriCast1.1/GCF_031307605.1_icTriCast1.1_rna.fna.gz"
+
+# Directory structure for the project
+dirs:
+  raw_reads: "data/raw"
+  trimmed_reads: "results/trimmed_reads"
+  unique_reads: "results/unique"
+  assembly: "results/trinity_assembly"
+  quantification: "results/quants"
+  blast_results: "results/blast_results"
+  final_assembly: "results/final_assembly"
+  annotation: "results/annotation"
+  comparative: "results/comparative_analysis"
+
+# Final output files
+output:
+  final_transcriptome: "results/final_assembly/Habb_transcriptome.fasta"
+  salmon_quant_dir: "results/salmon_final"
+  eggnog_annotation: "results/annotation/eggnog_results/Habb_annot.emapper.annotations"
