@@ -61,7 +61,7 @@ The pipeline is managed with Snakemake. Execute the entire analysis with:
 
 ```bash
 snakemake --cores all --use-conda
-
+```
 ### Pipeline Steps
 1. - **Quality Control & Trimming**: `FastQC` -> `MultiQC` -> `fastp` (adapter/quality trimming) -> `seqkit rmdup` (duplicate removal).
 2. - **De Novo Assembly**: `Trinity` assembly of filtered reads.
@@ -115,4 +115,5 @@ Chukwunta A., & Cassone B. (2025). "De novo assembly and comparative analysis of
 
 ## 🤝 Contributing & Contact
 For questions about the analysis, suggestions for improvement, or potential collaboration, please contact Augustine Chukwunta or open an issue on this repository.
+
 Thank you and Happy research!
