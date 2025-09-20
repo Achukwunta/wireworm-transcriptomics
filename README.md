@@ -36,7 +36,7 @@ wireworm-transcriptomics/
 ```
 
 ## ⚙️ Installation & Setup
-1. **Snakemake** are best installed via the [Conda](https://docs.conda.io/en/latest/). It is recommended to install **conda** via **Miniforge**. To install run:
+1. **Snakemake** are best installed via the [Conda](https://docs.conda.io/en/latest/). It is recommended to install **Conda** via **Miniforge**. To install run:
  ```bash
  conda create -c conda-forge -c bioconda -c nodefaults --name snakemake snakemake
  conda activate snakemake
@@ -61,7 +61,7 @@ Key databases (`BLAST nt`, `EggNOG`, `BUSCO`, `insecta_odb10`) must be downloade
 Install any required dependencies from `environment.yml` if you're not using **conda** to install everything initially:
  ```bash
  conda env create -f environment.yml
- conda activate soybean-alt-rnaseq
+ conda activate wireworm-transcriptomics
  ```
 
 ## 🚀 Running the Pipeline
@@ -106,9 +106,9 @@ Example config.yml:
 ## 👨‍💻 Author
 **Augustine Chukwunta**  
 MSc Biology, Brandon University, Manitoba, Canada
-Specialization in Bioinformatics  
 Thesis: *"Multi-Omics Approaches to Unravel Plant-Pathogen Interactions: Transcriptomics and Microbiome Analysis."*  
 Advisor: Dr. Bryan Cassone  
+
 [![GitHub: Achukwunta](https://img.shields.io/badge/GitHub-Achukwunta-blue?logo=github)](https://github.com/Achukwunta)
 
 ## 📜 Citation
@@ -117,5 +117,7 @@ Chukwunta A., & Cassone B. (2025). "De novo assembly and comparative analysis of
 
 ## 🤝 Contributing & Contact
 For questions about the analysis, suggestions for improvement, or potential collaboration, please contact Augustine Chukwunta or open an issue on this repository.
+
 Happy research!
+
 
