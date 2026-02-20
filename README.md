@@ -1,4 +1,4 @@
-# *De Novo* Transcriptome Assembly and Comparative Analysis of *Hypnoidus abbreviatus*
+# *De Novo* Assembly and Comparative Analysis of *Hypnoidus abbreviatus*
 
 [![Snakemake](https://img.shields.io/badge/snakemake-≥7.32.4-brightgreen.svg)](https://snakemake.github.io)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -119,5 +119,6 @@ Chukwunta A., & Cassone B. (2025). "De novo assembly and comparative analysis of
 For questions about the analysis, suggestions for improvement, or potential collaboration, please contact Augustine Chukwunta or open an issue on this repository.
 
 Happy research!
+
 
 
